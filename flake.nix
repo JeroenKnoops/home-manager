@@ -8,6 +8,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixgl.url = "github:guibou/nixGL";
+    pwdc.url = "github:JeroenKnoops/pwdc";
+    nix-index-database = {
+      url = "github:nix-community/nix-index-database";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    lolcommits-flake.url = "github:JeroenKnoops/lolcommits-flake";
     ai-coding = {
       url = "github:vansweej/ai-coding";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -39,7 +45,13 @@
   };
 
   outputs =
-    { self, nixpkgs, home-manager, nixgl, ... }@inputs:
+    {
+      self,
+      nixpkgs,
+      home-manager,
+      nixgl,
+      ...
+    }@inputs:
     let
       # Build a homeManagerConfiguration for a given machine.
       #
@@ -54,7 +66,8 @@
       #   2. Derives isDarwin from the system string
       #   3. Instantiates pkgs with the correct system, cudaSupport, and overlays
       #   4. Composes: identity inline module + common + platform + machine modules
-      mkHome = machineMetaPath: machineModulePath:
+      mkHome =
+        machineMetaPath: machineModulePath:
         let
           meta = import machineMetaPath;
           isDarwin = builtins.match ".*-darwin" meta.system != null;
@@ -64,7 +77,7 @@
             config.allowUnfree = true;
             config.cudaSupport = meta.cudaSupport;
             # nixGL is Linux-only; applying its overlay on Darwin causes eval errors.
-            overlays = if isDarwin then [] else [ nixgl.overlay ];
+            overlays = if isDarwin then [ ] else [ nixgl.overlay ];
           };
         in
         home-manager.lib.homeManagerConfiguration {
@@ -72,6 +85,7 @@
 
           extraSpecialArgs = {
             inherit inputs meta;
+            pwdcPackage = inputs.pwdc.packages.${meta.system}.default;
           };
 
           modules = [
@@ -87,19 +101,20 @@
             ./modules/common.nix
           ]
           # Platform module: Linux gets nixGL + .desktop; Darwin gets macOS defaults.
-          ++ (if isDarwin
-              then [ ./modules/darwin.nix ]
-              else [ ./modules/linux.nix ])
+          ++ (if isDarwin then [ ./modules/darwin.nix ] else [ ./modules/linux.nix ])
           # Machine-specific module: Docker/systemd on oryp6, local models on M5, etc.
           ++ [ machineModulePath ];
         };
 
     in
     {
-      homeConfigurations."oryp6"            = mkHome ./machines/oryp6.nix            ./modules/machines/oryp6.nix;
-      homeConfigurations."M1"               = mkHome ./machines/m1.nix               ./modules/machines/m1.nix;
-      homeConfigurations."parallels"        = mkHome ./machines/parallels.nix        ./modules/machines/parallels.nix;
-      homeConfigurations."M5"               = mkHome ./machines/m5.nix               ./modules/machines/m5.nix;
-      homeConfigurations."parallels-ubuntu" = mkHome ./machines/parallels-ubuntu.nix ./modules/machines/parallels-ubuntu.nix;
+      homeConfigurations."oryp6" = mkHome ./machines/oryp6.nix ./modules/machines/oryp6.nix;
+      homeConfigurations."M1" = mkHome ./machines/m1.nix ./modules/machines/m1.nix;
+      homeConfigurations."parallels" = mkHome ./machines/parallels.nix ./modules/machines/parallels.nix;
+      homeConfigurations."M5" = mkHome ./machines/m5.nix ./modules/machines/m5.nix;
+      homeConfigurations."parallels-ubuntu" =
+        mkHome ./machines/parallels-ubuntu.nix ./modules/machines/parallels-ubuntu.nix;
+      homeConfigurations."MACHXPVL4MXK7" =
+        mkHome ./machines/MACHXPVL4MXK7.nix ./modules/machines/MACHXPVL4MXK7.nix;
     };
 }

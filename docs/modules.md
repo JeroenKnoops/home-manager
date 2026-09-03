@@ -412,6 +412,28 @@ the same `bedrock-sonnet` default from `modules/choragos.nix`).
 
 ---
 
+## `modules/machines/MACHXPVL4MXK7.nix` — Jeroen's Philips MacBook only
+
+Applied only to the `MACHXPVL4MXK7` profile (`aarch64-darwin`, username
+`phnl310181059`).
+
+This profile preserves Jeroen's previous dotfiles configuration while fitting it
+into the repository's machine layering:
+
+- keeps the shared common/darwin base modules;
+- overrides the shared Jan git identity with Jeroen's work identity and SSH
+  signing setup;
+- disables the shared LazyVim bootstrap fragments and manages Jeroen's full
+  Neovim tree from `nvim/MACHXPVL4MXK7/`;
+- disables starship and enables Jeroen's oh-my-posh prompt theme from
+  `modules/machines/MACHXPVL4MXK7/custom.omp.json`;
+- imports `pwdc`, `nix-index-database`, and `cerebrum` for compatibility with
+  the shared `opencode` wrapper;
+- carries over the macOS AeroSpace, zsh, yazi, lazygit, direnv, fzf, tmux,
+  allowed signers, and lolcommits hook configuration.
+
+---
+
 ## `modules/machines/parallels-ubuntu.nix` — Parallels Ubuntu VM only
 
 Applied only to the `parallels-ubuntu` profile (`aarch64-linux`, username `parallels`).
