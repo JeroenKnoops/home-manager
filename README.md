@@ -9,6 +9,7 @@ for multiple machines, managed from a single repository.
 | `M1` | MacBook (work, retiring) | aarch64-darwin |
 | `M5` | MacBook (work) | aarch64-darwin |
 | `parallels-ubuntu` | Parallels Ubuntu VM | aarch64-linux |
+| `MACHXPVL4MXK7` | Jeroen's Philips MacBook | aarch64-darwin |
 
 > Deploying `parallels-ubuntu` to a colleague's machine? See the
 > [guest onboarding runbook](docs/parallels-ubuntu-guest.md).
@@ -54,6 +55,16 @@ git clone git@github.com:vansweej/home-manager.git ~/Projects/home-manager
 home-manager switch --flake ~/Projects/home-manager#M5
 ```
 
+### MACHXPVL4MXK7 (macOS)
+
+```bash
+home-manager switch --flake ~/workspace/jeroenknoops/home-manager#MACHXPVL4MXK7
+```
+
+This profile keeps Jeroen's full Neovim config under
+`nvim/MACHXPVL4MXK7/` and uses the machine-specific oh-my-posh prompt theme in
+`modules/machines/MACHXPVL4MXK7/custom.omp.json`.
+
 On first activation, the following happen automatically:
 
 1. `~/.config/nvim` is bootstrapped from the LazyVim starter
@@ -86,6 +97,7 @@ immediately without re-running switch.
 nix flake check
 nix build .#homeConfigurations.oryp6.activationPackage
 nix build .#homeConfigurations.M5.activationPackage
+nix build .#homeConfigurations.MACHXPVL4MXK7.activationPackage
 ```
 
 ## Setting up OpenCode without Nix
