@@ -8,6 +8,9 @@
 }:
 let
   lolcommits = inputs.lolcommits-flake.packages.${meta.system}.default;
+  sslConfigDir = "${config.home.homeDirectory}/.config/ssl";
+  umbrellaCertPath = "${sslConfigDir}/cisco-umbrella.pem";
+  combinedCaBundlePath = "${sslConfigDir}/ca-bundle-with-cisco-umbrella.pem";
 in
 {
   imports = [
@@ -144,6 +147,10 @@ in
     '';
   };
 
+  home.file.".wgetrc".text = ''
+    ca_certificate = ${combinedCaBundlePath}
+  '';
+
   home.packages = with pkgs; [
     aerospace
     any-nix-shell
@@ -186,7 +193,10 @@ in
     stack
     stow
     tmux
-    toilet
+    (toilet.overrideAttrs (old: {
+      preferLocalBuild = true;
+      allowSubstitutes = false;
+    }))
     typescript
     virtualenv
     vscode
@@ -202,7 +212,40 @@ in
 
   home.sessionVariables = {
     DIRENV_LOG_FORMAT = "";
+    CURL_CA_BUNDLE = combinedCaBundlePath;
+    GIT_SSL_CAINFO = combinedCaBundlePath;
+    NIX_SSL_CERT_FILE = combinedCaBundlePath;
+    SSL_CERT_FILE = combinedCaBundlePath;
   };
+
+  # Corporate TLS inspection on this machine re-signs public certificates with
+  # Cisco Umbrella. Export the trusted Umbrella certs from the macOS keychain at
+  # activation time and append them to Nix's default CA bundle so wget, curl,
+  # git, and other Nix-installed CLI tools trust the intercepted chain.
+  home.activation.installCiscoUmbrellaCaBundle =
+    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      sslDir="${sslConfigDir}"
+      umbrellaCert="${umbrellaCertPath}"
+      caBundle="${combinedCaBundlePath}"
+
+      run mkdir -p "$sslDir"
+
+      if [ -n "$DRY_RUN_CMD" ]; then
+        echo "/usr/bin/security find-certificate -a -c Cisco Umbrella -p > $umbrellaCert"
+      else
+        /usr/bin/security find-certificate -a -c "Cisco Umbrella" -p > "$umbrellaCert"
+
+        if [ ! -s "$umbrellaCert" ]; then
+          echo "MACHXPVL4MXK7: failed to export Cisco Umbrella certificates from the macOS keychain; TLS bundle not updated." >&2
+          exit 1
+        fi
+      fi
+
+      $DRY_RUN_CMD /bin/sh -c '${pkgs.coreutils}/bin/cat "$1" "$2" > "$3"' -- \
+        "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt" \
+        "$umbrellaCert" \
+        "$caBundle"
+    '';
 
   programs.starship.enable = lib.mkForce false;
   programs.starship.enableBashIntegration = lib.mkForce false;
