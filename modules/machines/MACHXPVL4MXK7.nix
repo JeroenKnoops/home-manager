@@ -8,6 +8,16 @@
 }:
 let
   lolcommits = inputs.lolcommits-flake.packages.${meta.system}.default;
+  hermes-agent = inputs.hermes-agent.packages.${meta.system}.default;
+  herdr = inputs.herdr.packages.${meta.system}.default;
+  supacode = inputs.supacode.packages.${meta.system}.supacode;
+  kas-changes = builtins.getFlake "git+ssh://git@github.com/philips-internal/synergy-build-analyse?dir=kas-changes&rev=d4864aac6af04b0209de16bc3117e2b2bd0e76cc";
+  binary-table = builtins.getFlake "git+ssh://git@github.com/philips-internal/synergy-build-analyse?dir=binary-table&rev=446faf6c237c2636814e67fc670bee20f6d98e08";
+  group-git-logs = builtins.getFlake "git+ssh://git@github.com/philips-internal/synergy-build-analyse?dir=group-git-logs&rev=f6aaeefb6f082a5186d82e2c287f295be4aedb3a";
+  dot-analyse-rs = builtins.getFlake "git+ssh://git@github.com/philips-internal/synergy-dotfile?rev=87677d758e4873d5151efaccdc111b9c5f308a38";
+  github-uses = builtins.getFlake "git+ssh://git@github.com/philips-internal/synergy-build-analyse?dir=workflow-overview&rev=a9e8eff559f11eb0615485d0cecd24d1dc3bd2e6";
+  tag-prs = builtins.getFlake "git+ssh://git@github.com/philips-internal/synergy-build-analyse?dir=tag-prs&rev=94b562e526c8400cb2680e926658e85e18f26ff4";
+  pn-buildlist-tool = builtins.getFlake "git+ssh://git@github.com/philips-internal/synergy-build-analyse?dir=pn-buildlist-tool&rev=29f721b3602e0a51788ff6c7bfd258fe7c22e910";
   sslConfigDir = "${config.home.homeDirectory}/.config/ssl";
   umbrellaCertPath = "${sslConfigDir}/cisco-umbrella.pem";
   combinedCaBundlePath = "${sslConfigDir}/ca-bundle-with-cisco-umbrella.pem";
@@ -17,6 +27,7 @@ in
     ../cerebrum.nix
     inputs.pwdc.homeModules.${meta.system}.default
     inputs.nix-index-database.homeModules.default
+    inputs._1password-shell-plugins.hmModules.default
   ];
 
   # MACHXPVL4MXK7 uses Jeroen's complete Neovim configuration rather than the
@@ -169,6 +180,8 @@ in
     gnugrep
     graphviz
     gti
+    hermes-agent
+    herdr
     jq
     jujutsu
     kubo
@@ -176,13 +189,16 @@ in
     maccy
     fastfetch
     nerd-fonts.fantasque-sans-mono
+    nerd-fonts.fira-code
     nerd-fonts.hack
     nerd-fonts.inconsolata
     nerd-fonts.jetbrains-mono
     nerd-fonts.roboto-mono
+    libiconv
     nil
     nixfmt
     nodejs
+    pi-coding-agent
     pipenv
     protobuf
     python313
@@ -190,6 +206,7 @@ in
     qemu
     ratchet
     ripgrep
+    secretspec
     stack
     stow
     tmux
@@ -208,6 +225,15 @@ in
     zld
     zsh
     zsh-syntax-highlighting
+
+    kas-changes.packages.${meta.system}.default
+    binary-table.packages.${meta.system}.default
+    group-git-logs.packages.${meta.system}.default
+    dot-analyse-rs.packages.${meta.system}.recipe-grep
+    dot-analyse-rs.packages.${meta.system}.recipe-neighbour
+    github-uses.packages.${meta.system}.default
+    tag-prs.packages.${meta.system}.default
+    pn-buildlist-tool.packages.${meta.system}.default
   ];
 
   home.sessionVariables = {
@@ -222,30 +248,35 @@ in
   # Cisco Umbrella. Export the trusted Umbrella certs from the macOS keychain at
   # activation time and append them to Nix's default CA bundle so wget, curl,
   # git, and other Nix-installed CLI tools trust the intercepted chain.
-  home.activation.installCiscoUmbrellaCaBundle =
-    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      sslDir="${sslConfigDir}"
-      umbrellaCert="${umbrellaCertPath}"
-      caBundle="${combinedCaBundlePath}"
+  home.activation.installCiscoUmbrellaCaBundle = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    sslDir="${sslConfigDir}"
+    umbrellaCert="${umbrellaCertPath}"
+    caBundle="${combinedCaBundlePath}"
 
-      run mkdir -p "$sslDir"
+    run mkdir -p "$sslDir"
 
-      if [ -n "$DRY_RUN_CMD" ]; then
-        echo "/usr/bin/security find-certificate -a -c Cisco Umbrella -p > $umbrellaCert"
-      else
-        /usr/bin/security find-certificate -a -c "Cisco Umbrella" -p > "$umbrellaCert"
+    if [ -n "$DRY_RUN_CMD" ]; then
+      echo "/usr/bin/security find-certificate -a -c Cisco Umbrella -p > $umbrellaCert"
+    else
+      /usr/bin/security find-certificate -a -c "Cisco Umbrella" -p > "$umbrellaCert"
 
-        if [ ! -s "$umbrellaCert" ]; then
-          echo "MACHXPVL4MXK7: failed to export Cisco Umbrella certificates from the macOS keychain; TLS bundle not updated." >&2
-          exit 1
-        fi
+      if [ ! -s "$umbrellaCert" ]; then
+        echo "MACHXPVL4MXK7: failed to export Cisco Umbrella certificates from the macOS keychain; TLS bundle not updated." >&2
+        exit 1
       fi
+    fi
 
-      $DRY_RUN_CMD /bin/sh -c '${pkgs.coreutils}/bin/cat "$1" "$2" > "$3"' -- \
-        "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt" \
-        "$umbrellaCert" \
-        "$caBundle"
-    '';
+    $DRY_RUN_CMD /bin/sh -c '${pkgs.coreutils}/bin/cat "$1" "$2" > "$3"' -- \
+      "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt" \
+      "$umbrellaCert" \
+      "$caBundle"
+  '';
+
+  home.activation.installHerdrIntegrations = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run mkdir -p "$HOME/.config/opencode" "$HOME/.hermes"
+    run ${herdr}/bin/herdr integration install opencode
+    run ${herdr}/bin/herdr integration install hermes
+  '';
 
   programs.starship.enable = lib.mkForce false;
   programs.starship.enableBashIntegration = lib.mkForce false;
@@ -305,7 +336,53 @@ in
         ff = false;
         rebase = true;
       };
+      remote.origin.fetch = [
+        "+refs/notes/*:refs/notes/*"
+      ];
     };
+  };
+
+  home.sessionPath = [ "$HOME/.local/bin" ];
+
+  home.file.".local/bin/git-find-build" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      if [ "$#" -lt 1 ]; then
+        echo "Usage: git find-build key=value [key=value ...]" >&2
+        echo "Example: git find-build target=qemuarm64 variant=vnv build_id addd9c90227a092fb7f1ef86a017552a67ab49ae" >&2
+        exit 1
+      fi
+
+      NOTES_REF="refs/notes/commits"
+      JQ_FILTER="true"
+
+      for arg in "$@"; do
+        if [[ "$arg" != *=* ]]; then
+          echo "Invalid argument: $arg (expected key=value)" >&2
+          exit 1
+        fi
+        key="''${arg%%=*}"
+        value="''${arg#*=}"
+        JQ_FILTER="$JQ_FILTER and .[\"$key\"] == \"$value\""
+      done
+
+      git notes --ref "$NOTES_REF" list | awk '{print $2}' | while read -r sha; do
+        git notes --ref "$NOTES_REF" show "$sha" 2>/dev/null \
+          | jq -e "$JQ_FILTER" >/dev/null \
+          && echo "$sha"
+      done
+    '';
+  };
+
+  programs._1password-shell-plugins = {
+    enable = true;
+    plugins = with pkgs; [
+      awscli2
+      gh
+    ];
   };
 
   programs.gh = {

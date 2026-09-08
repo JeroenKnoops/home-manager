@@ -14,6 +14,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     lolcommits-flake.url = "github:JeroenKnoops/lolcommits-flake";
+    _1password-shell-plugins.url = "github:1Password/shell-plugins";
+    supacode = {
+      url = "path:./common/supacode";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     ai-coding = {
       url = "github:vansweej/ai-coding";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -42,6 +47,8 @@
       url = "github:vansweej/pavo";
       flake = false;
     };
+    hermes-agent.url = "github:NousResearch/hermes-agent";
+    herdr.url = "https://github.com/ogulcancelik/herdr/archive/refs/tags/v0.7.3.tar.gz";
   };
 
   outputs =
