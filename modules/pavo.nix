@@ -1,4 +1,10 @@
-{ config, lib, pkgs, inputs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 
 let
   deployDir = "${config.home.homeDirectory}/.local/share/pavo";
@@ -71,7 +77,7 @@ in
         --exclude='log/' \
         --exclude='tmp/' \
         "${pavoSrc}/" "${deployDir}/"
-      $DRY_RUN_CMD ${pkgs.coreutils}/bin/cp /dev/stdin "${stampFile}" <<< "$currentSrc"
+      $DRY_RUN_CMD ${pkgs.coreutils}/bin/printf '%s\n' "$currentSrc" > "${stampFile}"
     fi
   '';
 }
