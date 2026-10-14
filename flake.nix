@@ -7,6 +7,10 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nixgl.url = "github:guibou/nixGL";
     pwdc.url = "github:JeroenKnoops/pwdc";
     nix-index-database = {
@@ -26,14 +30,17 @@
     athenaeum = {
       url = "github:vansweej/athenaeum-mcp";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.rust-overlay.follows = "rust-overlay";
     };
     cerebrum = {
       url = "github:vansweej/cerebrum-mcp";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.rust-overlay.follows = "rust-overlay";
     };
     choragos = {
       url = "github:vansweej/choragos";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.rust-overlay.follows = "rust-overlay";
     };
     agora = {
       url = "github:vansweej/agora";
@@ -42,13 +49,18 @@
     argus = {
       url = "github:vansweej/argus";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.rust-overlay.follows = "rust-overlay";
     };
     pavo = {
       url = "github:vansweej/pavo";
       flake = false;
     };
     hermes-agent.url = "github:NousResearch/hermes-agent";
-    herdr.url = "https://github.com/ogulcancelik/herdr/archive/refs/tags/v0.7.3.tar.gz";
+    herdr = {
+      url = "github:herdrdev/herdr";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.rust-overlay.follows = "rust-overlay";
+    };
   };
 
   outputs =

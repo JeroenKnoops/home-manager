@@ -1,9 +1,16 @@
-{ config, lib, pkgs, inputs, meta, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  meta,
+  ...
+}:
 
 let
-  athenaeumPkg = inputs.athenaeum.packages.${meta.system}.default;
-  choragosPkg  = inputs.choragos.packages.${meta.system}.default;
-  aiCodingPkg  = inputs.ai-coding.packages.${meta.system}.default;
+  athenaeumPkg = pkgs.callPackage ./athenaeum-package.nix { src = inputs.athenaeum.outPath; };
+  choragosPkg = inputs.choragos.packages.${meta.system}.default;
+  aiCodingPkg = inputs.ai-coding.packages.${meta.system}.default;
 
   # Stable per-user wrapper commands, deployed via home.packages (so they land
   # at ~/.nix-profile/bin/<name> on PATH — the same pattern already used by the
@@ -49,10 +56,10 @@ let
       "${choragosPkg}/bin/choragos-mcp-server" "$@"
   '';
 
-  homeBinDir        = "${config.home.homeDirectory}/.nix-profile/bin";
-  cerebrumMcpPath   = "${homeBinDir}/cerebrum-mcp";
-  athenaeumMcpPath  = "${homeBinDir}/athenaeum-mcp";
-  choragosMcpPath   = "${homeBinDir}/choragos-mcp";
+  homeBinDir = "${config.home.homeDirectory}/.nix-profile/bin";
+  cerebrumMcpPath = "${homeBinDir}/cerebrum-mcp";
+  athenaeumMcpPath = "${homeBinDir}/athenaeum-mcp";
+  choragosMcpPath = "${homeBinDir}/choragos-mcp";
 
   # JSON bodies for `claude mcp add-json <name> -s user '<json>'`. Registered
   # at USER scope (available in every project, not just the one where `claude`
@@ -63,9 +70,15 @@ let
   # that claude.nix deliberately leaves undeclared (see claude.nix's own
   # comment on that invariant).
   serverConfigs = {
-    cerebrum-mcp  = builtins.toJSON { type = "stdio"; command = cerebrumMcpPath; };
-    athenaeum-mcp = builtins.toJSON { type = "stdio"; command = athenaeumMcpPath; };
-    choragos-mcp  = builtins.toJSON {
+    cerebrum-mcp = builtins.toJSON {
+      type = "stdio";
+      command = cerebrumMcpPath;
+    };
+    athenaeum-mcp = builtins.toJSON {
+      type = "stdio";
+      command = athenaeumMcpPath;
+    };
+    choragos-mcp = builtins.toJSON {
       type = "stdio";
       command = choragosMcpPath;
       # choragos_run_plan drives a full plan-cycle run, which can take several
@@ -76,7 +89,11 @@ let
   };
 in
 {
-  config.home.packages = [ cerebrumMcpWrapper athenaeumMcpWrapper choragosMcpWrapper ];
+  config.home.packages = [
+    cerebrumMcpWrapper
+    athenaeumMcpWrapper
+    choragosMcpWrapper
+  ];
 
   # Idempotent registration, run once per server per machine. `claude mcp get
   # <name>` exits non-zero when the server isn't registered yet; re-running
@@ -92,18 +109,19 @@ in
   # explicitly: prefer PATH if some other mechanism already put it there, else
   # fall back to the known install location. Skips entirely (no error) when
   # neither resolves — e.g. a machine where Claude Code hasn't been installed.
-  config.home.activation.registerClaudeMcpServers =
-    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      CLAUDE_BIN="$(command -v claude 2>/dev/null || true)"
-      if [ -z "$CLAUDE_BIN" ] && [ -x "$HOME/.local/bin/claude" ]; then
-        CLAUDE_BIN="$HOME/.local/bin/claude"
-      fi
-      if [ -n "$CLAUDE_BIN" ]; then
-        ${lib.concatStringsSep "\n" (lib.mapAttrsToList (name: json: ''
+  config.home.activation.registerClaudeMcpServers = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    CLAUDE_BIN="$(command -v claude 2>/dev/null || true)"
+    if [ -z "$CLAUDE_BIN" ] && [ -x "$HOME/.local/bin/claude" ]; then
+      CLAUDE_BIN="$HOME/.local/bin/claude"
+    fi
+    if [ -n "$CLAUDE_BIN" ]; then
+      ${lib.concatStringsSep "\n" (
+        lib.mapAttrsToList (name: json: ''
           if ! "$CLAUDE_BIN" mcp get ${name} >/dev/null 2>&1; then
             run "$CLAUDE_BIN" mcp add-json ${name} -s user '${json}'
           fi
-        '') serverConfigs)}
-      fi
-    '';
+        '') serverConfigs
+      )}
+    fi
+  '';
 }

@@ -1,4 +1,11 @@
-{ pkgs, lib, config, inputs, meta, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  inputs,
+  meta,
+  ...
+}:
 {
   imports = [
     ./opencode.nix
@@ -7,6 +14,11 @@
   ];
 
   fonts.fontconfig.enable = true;
+
+  # The generated manpage builds Home Manager's full options.json and currently
+  # emits a Nix context warning. Disable it because this repo uses flake builds
+  # and focused eval checks instead of relying on local Home Manager manpages.
+  manual.manpages.enable = false;
 
   xdg.enable = true;
 
@@ -33,14 +45,11 @@
     # These entries power Jan's live-edit nvim workflow and are intentionally
     # omitted on guest images that set no `nvimCheckoutDir` (e.g. parallels-ubuntu).
     ".config/nvim/lua/plugins/opencode.lua".source =
-      config.lib.file.mkOutOfStoreSymlink
-        "${config.home.homeDirectory}/${meta.nvimCheckoutDir}/nvim/plugins/opencode.lua";
+      config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/${meta.nvimCheckoutDir}/nvim/plugins/opencode.lua";
     ".config/nvim/lua/plugins/rust.lua".source =
-      config.lib.file.mkOutOfStoreSymlink
-        "${config.home.homeDirectory}/${meta.nvimCheckoutDir}/nvim/plugins/rust.lua";
+      config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/${meta.nvimCheckoutDir}/nvim/plugins/rust.lua";
     ".config/nvim/lazyvim.json".source =
-      config.lib.file.mkOutOfStoreSymlink
-        "${config.home.homeDirectory}/${meta.nvimCheckoutDir}/nvim/lazyvim.json";
+      config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/${meta.nvimCheckoutDir}/nvim/lazyvim.json";
   };
 
   # Bootstrap LazyVim starter into ~/.config/nvim on first activation.
@@ -88,8 +97,8 @@
   programs.neovim = {
     enable = true;
     defaultEditor = true; # Sets nvim as default editor
-    vimAlias = true;      # Aliases 'vim' to 'nvim'
-    viAlias = true;       # Aliases 'vi' to 'nvim'
+    vimAlias = true; # Aliases 'vim' to 'nvim'
+    viAlias = true; # Aliases 'vi' to 'nvim'
     # Lock in legacy defaults; revisit when dropping Ruby/Python3 providers.
     withRuby = true;
     withPython3 = true;

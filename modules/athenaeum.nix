@@ -1,10 +1,19 @@
-{ config, lib, pkgs, inputs, meta, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  meta,
+  ...
+}:
 
 let
-  # Store-built athenaeum-mcp binary, consumed as a flake input (mirrors the
-  # ai-coding input pattern). Resolved per-machine via meta.system so the same
-  # module works on x86_64-linux (oryp6) and aarch64-darwin (M1, M5).
-  athenaeumPkg = inputs.athenaeum.packages.${meta.system}.default;
+  # Build athenaeum from the pinned input source locally instead of reading its
+  # flake package output. The upstream flake still uses deprecated nixpkgs attrs
+  # (`stdenv.isDarwin`, `pdfium-binaries`) that emit evaluation warnings with
+  # this repo's newer nixpkgs pin; packaging it here keeps the source pin while
+  # using the current attr names.
+  athenaeumPkg = pkgs.callPackage ./athenaeum-package.nix { src = inputs.athenaeum.outPath; };
 
   # Mutable data directory OUTSIDE the Nix store. The athenaeum-mcp-server binary
   # and the athenaeum-ingest CLI both self-locate their LanceDB store here in-binary
@@ -114,7 +123,10 @@ in
   # Only the ingest CLI and watchexec land on PATH; the MCP server is wired into
   # OpenCode via the absolute store path in opencodeOverlay below, so it is
   # deliberately omitted.
-  config.home.packages = [ athenaeumIngest pkgs.watchexec ];
+  config.home.packages = [
+    athenaeumIngest
+    pkgs.watchexec
+  ];
 
   config.programs.athenaeum.opencodeOverlay = {
     # MCP server registration. command is the store-built binary instead of
@@ -138,12 +150,36 @@ in
     };
 
     agent = {
-      coordinator = { tools = { "athenaeum*" = true; }; };
-      brainstorm = { tools = { "athenaeum*" = true; }; };
-      spar = { tools = { "athenaeum*" = true; }; };
-      teach = { tools = { "athenaeum*" = true; }; };
-      plan = { tools = { "athenaeum*" = true; }; };
-      explore = { tools = { "athenaeum*" = true; }; };
+      coordinator = {
+        tools = {
+          "athenaeum*" = true;
+        };
+      };
+      brainstorm = {
+        tools = {
+          "athenaeum*" = true;
+        };
+      };
+      spar = {
+        tools = {
+          "athenaeum*" = true;
+        };
+      };
+      teach = {
+        tools = {
+          "athenaeum*" = true;
+        };
+      };
+      plan = {
+        tools = {
+          "athenaeum*" = true;
+        };
+      };
+      explore = {
+        tools = {
+          "athenaeum*" = true;
+        };
+      };
     };
   };
 }
