@@ -687,6 +687,22 @@
         "type": "github"
       }
     },
+    "oh-my-posh-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792022912,
+        "narHash": "sha256-GQtYiPEKq0UfeTQ0UbXLFByTe5y2orQbo6uXCzwR7Cw=",
+        "owner": "JanDeDobbeleer",
+        "repo": "oh-my-posh",
+        "rev": "913014b4abdb5c6be2fcd6e759d242168fa390e8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "JanDeDobbeleer",
+        "repo": "oh-my-posh",
+        "type": "github"
+      }
+    },
     "pavo": {
       "flake": false,
       "locked": {
@@ -789,6 +805,7 @@
         "nix-index-database": "nix-index-database",
         "nixgl": "nixgl",
         "nixpkgs": "nixpkgs_5",
+        "oh-my-posh-src": "oh-my-posh-src",
         "pavo": "pavo",
         "pwdc": "pwdc",
         "rust-overlay": "rust-overlay",

@@ -6,6 +6,8 @@
     inputs.nix-index-database.homeModules.default
     inputs._1password-shell-plugins.hmModules.default
 
+    ../oh-my-posh-git.nix
+
     ./MACHXPVL4MXK7/ai.nix
     ./MACHXPVL4MXK7/desktop.nix
     ./MACHXPVL4MXK7/editor.nix

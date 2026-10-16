@@ -55,6 +55,10 @@
       url = "github:vansweej/pavo";
       flake = false;
     };
+    oh-my-posh-src = {
+      url = "github:JanDeDobbeleer/oh-my-posh";
+      flake = false;
+    };
     hermes-agent.url = "github:NousResearch/hermes-agent";
     herdr = {
       url = "github:herdrdev/herdr";
