@@ -14,6 +14,7 @@
     ./MACHXPVL4MXK7/fonts.nix
     ./MACHXPVL4MXK7/git.nix
     ./MACHXPVL4MXK7/philips-internal.nix
+    ./MACHXPVL4MXK7/sketchybar.nix
     ./MACHXPVL4MXK7/terminal.nix
     ./MACHXPVL4MXK7/tools.nix
   ];
