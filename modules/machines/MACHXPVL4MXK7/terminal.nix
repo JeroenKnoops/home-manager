@@ -125,24 +125,17 @@
       yhelp = "cat ~/.config/yabai/yhelp";
     };
     dirHashes = {
-      BLURK = "/Users/Shared/PhilipsDev/synergy/synergy-base";
       JK = "${config.home.homeDirectory}/workspace/jeroenknoops";
       MGL = "/Users/Shared/PhilipsDev/synergy/synergy-mgl-base";
       PD = "/Users/Shared/PhilipsDev";
-      PEG = config.home.homeDirectory;
       PF = "${config.home.homeDirectory}/workspace/philips-forks";
       PI = "${config.home.homeDirectory}/workspace/philips-internal";
       PS = "${config.home.homeDirectory}/workspace/philips-software";
-      SA = "/Users/Shared/PhilipsDev/synergy/synergy-auth";
       SB = "/Users/Shared/PhilipsDev/synergy/synergy-base";
       SD = "/Users/Shared/PhilipsDev/synergy/synergy-doc";
       SYN = "/Users/Shared/PhilipsDev/synergy";
       SYB = "/Users/Shared/PhilipsDev/synergy/synergy-yocto-build";
       SYMS = "/Users/Shared/PhilipsDev/synergy/synergy-yocto-meta-synergy";
-      WSB = "/Users/Shared/PhilipsDev/synergy/worktrees/synergy-base";
-      WSYB = "/Users/Shared/PhilipsDev/synergy/worktrees/synergy-yocto-build";
-      WSYMS = "/Users/Shared/PhilipsDev/synergy/worktrees/synergy-yocto-meta-synergy";
-      crypt = "/Users/Shared/PhilipsDev/crypt";
     };
     initContent = lib.mkAfter ''
       function y() {
