@@ -67,6 +67,37 @@
 
   programs.nix-index-database.comma.enable = true;
 
+  home.file.".local/bin/darwin-switch-machxpvl4mxk7" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      flake="${config.home.homeDirectory}/workspace/jeroenknoops/home-manager#darwinConfigurations.MACHXPVL4MXK7.system"
+
+      # Build as the normal user so GitHub/1Password credentials from the login
+      # session are available for private flake inputs. Only the profile switch
+      # and activation run as root.
+      system_config="$(nix build --no-link --print-out-paths "$flake" | tail -n 1)"
+
+      sudo /bin/sh -c '
+        set -eu
+        system_config="$1"
+        user="$2"
+
+        export PATH="/nix/var/nix/profiles/default/bin:/run/current-system/sw/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+        nix-env -p /nix/var/nix/profiles/system --set "$system_config"
+
+        if [ -x "$system_config/activate-user" ] && ! grep -q "^# nix-darwin: deprecated$" "$system_config/activate-user"; then
+          sudo --user="$user" --set-home -- "$system_config/activate-user"
+        fi
+
+        "$system_config/activate"
+      ' sh "$system_config" "$USER"
+    '';
+  };
+
   programs.zsh = {
     enable = true;
     autosuggestion.enable = true;
@@ -87,30 +118,24 @@
       "@@e" = "$($(fc -ln -1) |& tail -1)";
       ":q" = "exit";
       aerohelp = "cat ~/.config/aerohelp";
+      drs = "darwin-switch-machxpvl4mxk7";
       gbrm = "git branch --merged | grep -v \"\\*\" | xargs -n 1 git branch -d";
       glog = "git log --pretty=format:'%C(yellow)%h%C(reset) %C(green)%ar%C(reset) %C(bold blue)%an%C(reset) %C(red)%d%C(reset) %s' --graph --abbrev-commit --decorate";
       t = "toilet -f mono12  -F metal $(date +'%T')";
       yhelp = "cat ~/.config/yabai/yhelp";
     };
     dirHashes = {
-      BLURK = "/Users/Shared/PhilipsDev/synergy/synergy-base";
       JK = "${config.home.homeDirectory}/workspace/jeroenknoops";
       MGL = "/Users/Shared/PhilipsDev/synergy/synergy-mgl-base";
       PD = "/Users/Shared/PhilipsDev";
-      PEG = config.home.homeDirectory;
       PF = "${config.home.homeDirectory}/workspace/philips-forks";
       PI = "${config.home.homeDirectory}/workspace/philips-internal";
       PS = "${config.home.homeDirectory}/workspace/philips-software";
-      SA = "/Users/Shared/PhilipsDev/synergy/synergy-auth";
       SB = "/Users/Shared/PhilipsDev/synergy/synergy-base";
       SD = "/Users/Shared/PhilipsDev/synergy/synergy-doc";
       SYN = "/Users/Shared/PhilipsDev/synergy";
       SYB = "/Users/Shared/PhilipsDev/synergy/synergy-yocto-build";
       SYMS = "/Users/Shared/PhilipsDev/synergy/synergy-yocto-meta-synergy";
-      WSB = "/Users/Shared/PhilipsDev/synergy/worktrees/synergy-base";
-      WSYB = "/Users/Shared/PhilipsDev/synergy/worktrees/synergy-yocto-build";
-      WSYMS = "/Users/Shared/PhilipsDev/synergy/worktrees/synergy-yocto-meta-synergy";
-      crypt = "/Users/Shared/PhilipsDev/crypt";
     };
     initContent = lib.mkAfter ''
       function y() {

@@ -32,7 +32,8 @@ for multiple machines, managed from a single repository.
 ### Prerequisites
 
 - Nix installed with flakes enabled
-- Home Manager installed (standalone)
+- Home Manager installed for standalone profiles
+- nix-darwin installed for `MACHXPVL4MXK7` system-level macOS settings
 
 ### oryp6 (Linux)
 
@@ -58,7 +59,22 @@ home-manager switch --flake ~/Projects/home-manager#M5
 ### MACHXPVL4MXK7 (macOS)
 
 ```bash
-home-manager switch --flake ~/workspace/jeroenknoops/home-manager#MACHXPVL4MXK7
+# First nix-darwin activation if darwin-rebuild is not installed yet:
+system_config="$(nix build --no-link --print-out-paths ~/workspace/jeroenknoops/home-manager#darwinConfigurations.MACHXPVL4MXK7.system)"
+sudo /bin/sh -c '
+  set -eu
+  system_config="$1"
+  user="$2"
+  export PATH="/nix/var/nix/profiles/default/bin:/run/current-system/sw/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+  nix-env -p /nix/var/nix/profiles/system --set "$system_config"
+  if [ -x "$system_config/activate-user" ] && ! grep -q "^# nix-darwin: deprecated$" "$system_config/activate-user"; then
+    sudo --user="$user" --set-home -- "$system_config/activate-user"
+  fi
+  "$system_config/activate"
+' sh "$system_config" "$USER"
+
+# Subsequent activations:
+drs
 ```
 
 This profile keeps Jeroen's full Neovim config under
@@ -84,8 +100,11 @@ After editing any Nix-managed file:
 # Linux
 home-manager switch --flake ~/Projects/home-manager#oryp6
 
-# macOS
+# macOS Home Manager-only profiles
 home-manager switch --flake ~/Projects/home-manager#M5
+
+# macOS nix-darwin profile
+drs
 ```
 
 Files managed with `mkOutOfStoreSymlink` (nvim plugins, `opencode.json`) update
@@ -98,6 +117,7 @@ nix flake check
 nix build .#homeConfigurations.oryp6.activationPackage
 nix build .#homeConfigurations.M5.activationPackage
 nix build .#homeConfigurations.MACHXPVL4MXK7.activationPackage
+nix build .#darwinConfigurations.MACHXPVL4MXK7.system
 ```
 
 ## Setting up OpenCode without Nix

@@ -7,6 +7,10 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nix-darwin = {
+      url = "github:nix-darwin/nix-darwin/master";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -65,6 +69,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.rust-overlay.follows = "rust-overlay";
     };
+    wentsketchy = {
+      url = "github:lucax88x/wentsketchy";
+      flake = false;
+    };
   };
 
   outputs =
@@ -72,61 +80,95 @@
       self,
       nixpkgs,
       home-manager,
+      nix-darwin,
       nixgl,
       ...
     }@inputs:
     let
-      # Build a homeManagerConfiguration for a given machine.
-      #
-      # machineMetaPath  - path to a plain Nix attrset file (machines/<name>.nix)
-      #                    containing: system, username, homeDirectory, stateVersion,
-      #                    cudaSupport, nixGL (optional, default false)
-      # machineModulePath - path to the machine-specific home-manager module
-      #                     (modules/machines/<name>.nix)
-      #
-      # The helper:
-      #   1. Imports the metadata (before pkgs exists — no chicken-and-egg)
-      #   2. Derives isDarwin from the system string
-      #   3. Instantiates pkgs with the correct system, cudaSupport, and overlays
-      #   4. Composes: identity inline module + common + platform + machine modules
+      mkPkgs =
+        meta:
+        let
+          isDarwin = builtins.match ".*-darwin" meta.system != null;
+        in
+        import nixpkgs {
+          system = meta.system;
+          config.allowUnfree = true;
+          config.cudaSupport = meta.cudaSupport;
+          # nixGL is Linux-only; applying its overlay on Darwin causes eval errors.
+          overlays = if isDarwin then [ ] else [ nixgl.overlay ];
+        };
+
+      mkHomeModules =
+        meta: machineModulePath:
+        let
+          isDarwin = builtins.match ".*-darwin" meta.system != null;
+        in
+        [
+          # Per-machine identity — derived from the metadata file so no module
+          # needs to hardcode username, homeDirectory, or stateVersion.
+          {
+            home.username = meta.username;
+            home.homeDirectory = meta.homeDirectory;
+            home.stateVersion = meta.stateVersion;
+          }
+
+          # Universal configuration shared by all machines.
+          ./modules/common.nix
+        ]
+        # Platform module: Linux gets nixGL + .desktop; Darwin gets macOS defaults.
+        ++ (if isDarwin then [ ./modules/darwin.nix ] else [ ./modules/linux.nix ])
+        # Machine-specific module: Docker/systemd on oryp6, local models on M5, etc.
+        ++ [ machineModulePath ];
+
+      mkSpecialArgs = meta: {
+        inherit inputs meta;
+        pwdcPackage = inputs.pwdc.packages.${meta.system}.default;
+      };
+
+      # Build a standalone homeManagerConfiguration for a given machine.
       mkHome =
         machineMetaPath: machineModulePath:
         let
           meta = import machineMetaPath;
-          isDarwin = builtins.match ".*-darwin" meta.system != null;
-
-          pkgs = import nixpkgs {
-            system = meta.system;
-            config.allowUnfree = true;
-            config.cudaSupport = meta.cudaSupport;
-            # nixGL is Linux-only; applying its overlay on Darwin causes eval errors.
-            overlays = if isDarwin then [ ] else [ nixgl.overlay ];
-          };
         in
         home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
+          pkgs = mkPkgs meta;
+          extraSpecialArgs = mkSpecialArgs meta;
+          modules = mkHomeModules meta machineModulePath;
+        };
 
-          extraSpecialArgs = {
-            inherit inputs meta;
-            pwdcPackage = inputs.pwdc.packages.${meta.system}.default;
-          };
-
+      # Build a nix-darwin system that wraps the same Home Manager modules.
+      mkDarwin =
+        machineMetaPath: machineModulePath:
+        let
+          meta = import machineMetaPath;
+        in
+        nix-darwin.lib.darwinSystem {
+          system = meta.system;
+          specialArgs = mkSpecialArgs meta;
           modules = [
-            # Per-machine identity — derived from the metadata file so no module
-            # needs to hardcode username, homeDirectory, or stateVersion.
+            ./modules/darwin-system.nix
+            home-manager.darwinModules.home-manager
             {
-              home.username = meta.username;
-              home.homeDirectory = meta.homeDirectory;
-              home.stateVersion = meta.stateVersion;
-            }
+              nixpkgs = {
+                hostPlatform = meta.system;
+                config.allowUnfree = true;
+                config.cudaSupport = meta.cudaSupport;
+              };
 
-            # Universal configuration shared by all machines.
-            ./modules/common.nix
-          ]
-          # Platform module: Linux gets nixGL + .desktop; Darwin gets macOS defaults.
-          ++ (if isDarwin then [ ./modules/darwin.nix ] else [ ./modules/linux.nix ])
-          # Machine-specific module: Docker/systemd on oryp6, local models on M5, etc.
-          ++ [ machineModulePath ];
+              users.users.${meta.username} = {
+                name = meta.username;
+                home = meta.homeDirectory;
+              };
+
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                extraSpecialArgs = mkSpecialArgs meta;
+                users.${meta.username}.imports = mkHomeModules meta machineModulePath;
+              };
+            }
+          ];
         };
 
     in
@@ -138,5 +180,8 @@
         mkHome ./machines/parallels-ubuntu.nix ./modules/machines/parallels-ubuntu.nix;
       homeConfigurations."MACHXPVL4MXK7" =
         mkHome ./machines/MACHXPVL4MXK7.nix ./modules/machines/MACHXPVL4MXK7.nix;
+
+      darwinConfigurations."MACHXPVL4MXK7" =
+        mkDarwin ./machines/MACHXPVL4MXK7.nix ./modules/machines/MACHXPVL4MXK7.nix;
     };
 }

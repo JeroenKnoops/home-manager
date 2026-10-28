@@ -10,6 +10,13 @@
     # Start AeroSpace at login
     start-at-login = true
 
+    # Notify SketchyBar when the focused AeroSpace workspace changes
+    exec-on-workspace-change = [
+      '/bin/bash',
+      '-c',
+      'echo "aerospace_workspace_change { \"focused\": \"$AEROSPACE_FOCUSED_WORKSPACE\", \"prev\": \"$AEROSPACE_PREV_WORKSPACE\" } ¬" > /tmp/wentsketchy'
+    ]
+
     # Normalization settings
     enable-normalization-flatten-containers = true
     enable-normalization-opposite-orientation-for-nested-containers = true

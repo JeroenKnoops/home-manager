@@ -8,7 +8,7 @@ let
   kas-changes = builtins.getFlake "git+ssh://git@github.com/philips-internal/synergy-build-analyse?dir=kas-changes&rev=0a7d7571a459c2b4fa6f161078d106179ff33a00";
   binary-table = builtins.getFlake "git+ssh://git@github.com/philips-internal/synergy-build-analyse?dir=binary-table&rev=0a7d7571a459c2b4fa6f161078d106179ff33a00";
   group-git-logs = builtins.getFlake "git+ssh://git@github.com/philips-internal/synergy-build-analyse?dir=group-git-logs&rev=0a7d7571a459c2b4fa6f161078d106179ff33a00";
-  #dot-analyse-rs = builtins.getFlake "git+ssh://git@github.com/philips-internal/synergy-dotfile?rev=78ed07bd3bd518112f4f9244f9f8e7eeac985fe2";
+  dot-analyse-rs = builtins.getFlake "git+ssh://git@github.com/philips-internal/synergy-dotfile?rev=78ed07bd3bd518112f4f9244f9f8e7eeac985fe2";
   github-uses = builtins.getFlake "git+ssh://git@github.com/philips-internal/synergy-build-analyse?dir=workflow-overview&rev=0a7d7571a459c2b4fa6f161078d106179ff33a00";
   tag-prs = builtins.getFlake "git+ssh://git@github.com/philips-internal/synergy-build-analyse?dir=tag-prs&rev=0a7d7571a459c2b4fa6f161078d106179ff33a00";
   pn-buildlist-tool = builtins.getFlake "git+ssh://git@github.com/philips-internal/synergy-build-analyse?dir=pn-buildlist-tool&rev=0a7d7571a459c2b4fa6f161078d106179ff33a00";
@@ -18,8 +18,8 @@ in
     kas-changes.packages.${meta.system}.default
     binary-table.packages.${meta.system}.default
     group-git-logs.packages.${meta.system}.default
-    #dot-analyse-rs.packages.${meta.system}.recipe-grep
-    #dot-analyse-rs.packages.${meta.system}.recipe-neighbour
+    dot-analyse-rs.packages.${meta.system}.recipe-grep
+    dot-analyse-rs.packages.${meta.system}.recipe-neighbour
     github-uses.packages.${meta.system}.default
     tag-prs.packages.${meta.system}.default
     pn-buildlist-tool.packages.${meta.system}.default

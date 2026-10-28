@@ -13,7 +13,7 @@ let
     pname = "oh-my-posh";
     inherit version src;
 
-    vendorHash = "sha256-RAKpIY8s9ON2NFBy08WTTQHVy/qT6q05F81eMrasmeI=";
+    vendorHash = "sha256-TZcC4Fvcnfuq8iTMxAQDZWpw1a8ccxTEYpnLOYKR2rE=";
     sourceRoot = "source/src";
 
     ldflags = [

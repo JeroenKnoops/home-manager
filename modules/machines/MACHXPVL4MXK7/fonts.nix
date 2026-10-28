@@ -57,6 +57,7 @@ in
     nerd-fonts.hack
     nerd-fonts.inconsolata
     nerd-fonts.jetbrains-mono
+    nerd-fonts.meslo-lg
     nerd-fonts.roboto-mono
   ];
 

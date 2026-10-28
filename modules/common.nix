@@ -73,7 +73,11 @@
     enable = true;
     initExtra = ''
       unset __HM_SESS_VARS_SOURCED
-      . "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
+      if [ -f "/etc/profiles/per-user/$USER/etc/profile.d/hm-session-vars.sh" ]; then
+        . "/etc/profiles/per-user/$USER/etc/profile.d/hm-session-vars.sh"
+      else
+        . "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
+      fi
     '';
   };
 
