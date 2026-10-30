@@ -114,6 +114,11 @@ in
     run ${herdr}/bin/herdr integration install hermes
   '';
 
+  home.activation.configureHermesDefaults = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run ${hermes-agent}/bin/hermes config set model.default gpt-5.6-luna
+    run ${hermes-agent}/bin/hermes config set --force agent.reasoning_effort medium
+  '';
+
   home.activation.installHerdrApp = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     run mkdir -p "$HOME/Applications" "$HOME/.local/bin"
     run rm -rf "$HOME/Applications/Herdr.app"
