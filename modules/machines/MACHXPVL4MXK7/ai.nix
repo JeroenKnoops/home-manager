@@ -9,6 +9,20 @@
 let
   hermes-agent = inputs.hermes-agent.packages.${meta.system}.default;
   herdr = inputs.herdr.packages.${meta.system}.default;
+  herdr-app = pkgs.stdenvNoCC.mkDerivation {
+    pname = "herdr-app";
+    version = "0.1.9";
+    src = pkgs.fetchurl {
+      url = "https://releases.herdr.dev/app/0.1.9/herdr-app-macos-aarch64.tar.gz";
+      hash = "sha256-fNeD1s2Y4FDXy0O8Q9f6zDh9MAtbXpPHN2WWtdhycjE=";
+    };
+    dontUnpack = true;
+    installPhase = ''
+      mkdir -p "$out/Applications" "$out/bin"
+      tar -xzf "$src" -C "$out/Applications"
+      ln -s "$out/Applications/Herdr.app/Contents/MacOS/Herdr" "$out/bin/herdr-app"
+    '';
+  };
 
   # Read the upstream opencode.json from the pinned ai-coding Nix store path and
   # overlay both the M5-specific provider block and the athenaeum-mcp server
@@ -86,6 +100,7 @@ in
   home.packages = with pkgs; [
     hermes-agent
     herdr
+    herdr-app
     pi-coding-agent
   ];
 
@@ -97,6 +112,13 @@ in
     run mkdir -p "$HOME/.config/opencode" "$HOME/.hermes"
     run ${herdr}/bin/herdr integration install opencode
     run ${herdr}/bin/herdr integration install hermes
+  '';
+
+  home.activation.installHerdrApp = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run mkdir -p "$HOME/Applications" "$HOME/.local/bin"
+    run rm -rf "$HOME/Applications/Herdr.app"
+    run cp -R "${herdr-app}/Applications/Herdr.app" "$HOME/Applications/Herdr.app"
+    run ln -sfn "$HOME/Applications/Herdr.app/Contents/MacOS/Herdr" "$HOME/.local/bin/herdr-app"
   '';
 
   # Override the shared opencode.json symlink (deployed by opencode.nix) with a
