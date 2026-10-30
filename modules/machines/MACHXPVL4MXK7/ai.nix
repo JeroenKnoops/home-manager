@@ -9,6 +9,20 @@
 let
   hermes-agent = inputs.hermes-agent.packages.${meta.system}.default;
   herdr = inputs.herdr.packages.${meta.system}.default;
+  herdr-core = pkgs.stdenvNoCC.mkDerivation {
+    pname = "herdr-core";
+    version = "0.1.14";
+    src = pkgs.fetchurl {
+      url = "https://releases.herdr.dev/core/0.1.14/herdr-core-macos-aarch64.tar.gz";
+      hash = "sha256-ylJDKdLgYwIZVQBV3McfQqr9hfujVuDVQ9b1EkRIeXA=";
+    };
+    dontUnpack = true;
+    installPhase = ''
+      mkdir -p "$out/bin"
+      tar -xzf "$src" -C "$out/bin"
+      ln -s herdr-core "$out/bin/hc"
+    '';
+  };
   herdr-app = pkgs.stdenvNoCC.mkDerivation {
     pname = "herdr-app";
     version = "0.1.9";
@@ -100,6 +114,7 @@ in
   home.packages = with pkgs; [
     hermes-agent
     herdr
+    herdr-core
     herdr-app
     pi-coding-agent
   ];
